@@ -31,7 +31,7 @@ void processInput(int &running, float deltaTime) {
     const float baseSpeed = 2.5f;
     const Uint8* state = SDL_GetKeyboardState(NULL);
     float speed = baseSpeed;
-    if (state[SDL_SCANCODE_LSHIFT]) speed = 8.0f; // sprint
+    if (state[SDL_SCANCODE_LSHIFT]) speed = 10.0f; // sprint
     float cameraSpeed = speed * deltaTime;
 
     // Forward / Back / Left / Right
@@ -59,16 +59,15 @@ typedef struct {
     GLuint texture;
 } Planet;
 
-
 Planet planets[] = {
-    {45,   1.2, 0, 0, 1.2, 1.0, 0.8,0.8,0.7,0},   // Mercury
-    {72,   1.5, 0, 0, 0.9, 0.9, 1.0,0.6,0.2,0},   // Venus
-    {99,   1.65,0, 0, 0.8, 1.0, 1,0.3,0.1,0},     // Earth
-    {120,  1.8, 0, 0, 0.6, 0.8, 0.9,0.6,0.3,0},   // Mars
-    {180,  3.75,0, 0, 0.4, 0.5, 0.9,0.8,0.5,0},   // Jupiter
-    {246,  3.0, 0, 0, 0.3, 0.3, 0.5,0.8,1,0},     // Saturn
-    {270,  2.7, 0, 0, 0.25,0.25, 0.5,0.8,1,0},    // Uranus
-    {315,  2.5, 0, 0, 0.2, 0.2, 0.3,0.5,1,0}      // Neptune
+    {18,  1.2, 0, 0, 2.0, 1.0, 0.8,0.8,0.7,0},   // Mercury
+    {22, 1.5, 0, 0, 1.5, 0.9, 1.0,0.6,0.2,0},   // Venus
+    {27, 1.65,0, 0, 1.2, 1.0, 1,0.3,0.1,0},     // Earth
+    {32+7, 1.8, 0, 0, 1.0, 0.8, 0.9,0.6,0.3,0},   // Mars
+    {44+7, 3.75,0, 0, 0.5, 0.5, 0.9,0.8,0.5,0},   // Jupiter (extra gap before this)
+    {58+10, 3.0, 0, 0, 0.4, 0.3, 0.5,0.8,1,0},     // Saturn (room for rings)
+    {72+14, 2.7, 0, 0, 0.3, 0.25,0.5,0.8,1,0},     // Uranus
+    {100, 2.5, 0, 0, 0.25,0.2, 0.3,0.5,1,0}      // Neptune
 };
 
 int planetCount = sizeof(planets)/sizeof(planets[0]);
@@ -155,19 +154,6 @@ void drawSphere(float r, GLuint texture=0){
     glDisable(GL_TEXTURE_2D);
 }
 
-void initBelt(std::vector<Asteroid>& belt, float inner, float outer, int count) {
-    for(int i=0; i<count; i++) {
-        Asteroid a;
-        a.angle  = ((float)rand()/RAND_MAX) * 360.0f;
-        a.radius = inner + ((float)rand()/RAND_MAX) * (outer - inner);
-        a.height = ((float)rand()/RAND_MAX - 0.5f) * 1.0f;     // belt thickness
-        a.size   = 0.2f + ((float)rand()/RAND_MAX) * 0.08f;
-        a.speed  = 0.05f + ((float)rand()/RAND_MAX) * 0.15f;
-        a.shade  = 0.4f + ((float)rand()/RAND_MAX)*0.4f;
-        belt.push_back(a);
-    }
-}
-
 void drawOrbit(float r){
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -182,6 +168,19 @@ void drawOrbit(float r){
     glDisable(GL_LINE_SMOOTH);
 }
 
+void initBelt(std::vector<Asteroid>& belt, float inner, float outer, int count) {
+    for(int i=0; i<count; i++) {
+        Asteroid a;
+        a.angle  = ((float)rand()/RAND_MAX) * 360.0f;
+        a.radius = inner + ((float)rand()/RAND_MAX) * (outer - inner);
+        a.height = ((float)rand()/RAND_MAX - 0.5f) * 1.2f;   // belt thickness
+        a.size   = 0.03f + ((float)rand()/RAND_MAX) * 0.08f;
+        a.speed  = 0.01f + ((float)rand()/RAND_MAX) * 0.15f;
+        a.shade  = 0.4f + ((float)rand()/RAND_MAX)*0.4f;
+        belt.push_back(a);
+    }
+}
+
 void drawBelt(std::vector<Asteroid>& belt) {
     for(auto& a : belt) {
         a.angle += a.speed;
@@ -193,10 +192,12 @@ void drawBelt(std::vector<Asteroid>& belt) {
         glPushMatrix();
         glTranslatef(x, a.height, z);
 
-        glColor4f(a.shade, a.shade, a.shade,0.5f); // optical improvement: semi-transparent
+        float shade = 0.5f + ((float)rand()/RAND_MAX) * 0.4f;
+        glColor4f(a.shade, a.shade, a.shade,0.85f);
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
         drawSphere(a.size, 0);
         glPopMatrix();
@@ -332,22 +333,23 @@ void drawScene(){
     glPopMatrix();
 
     // Draw orbits
-    float orbits[] = {45, 72, 99, 120, 180, 246, 270, 315};
     glEnable(GL_BLEND);
-glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-glEnable(GL_LINE_SMOOTH);
-glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
+    glPushAttrib(GL_ENABLE_BIT);
+    glDisable(GL_LIGHTING);
+    glColor4f(0.8f, 0.8f, 1.0f, 0.6f);
 
-    glPushAttrib(GL_ENABLE_BIT);   // Save current states
-    glDisable(GL_LIGHTING);        // Orbits are lines, don't need lighting
-    glColor3f(0.7f, 0.7f, 0.7f);  // Slightly brighter lines for visibility
-    for(int i=0;i<8;i++) drawOrbit(orbits[i]);
-    glPopAttrib();                 // Restore previous OpenGL states
-glDisable(GL_LINE_SMOOTH);
-glDisable(GL_BLEND);
+    for(int i = 0; i < planetCount; i++) {
+        drawOrbit(planets[i].orbitR);
+    }
 
+    glPopAttrib();
 
+    glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_BLEND);
 
     // Planets (except Earth)
     for(int i=0;i<planetCount;i++){
@@ -381,15 +383,12 @@ glDisable(GL_BLEND);
 }
 
 /* ================= UPDATE ================= */
-float GLOBAL_ORBIT_SPEED = 50.0f;
-float EARTH_ORBIT_MULTIPLIER = 0.7f; 
-
 void updatePlanets(float deltaTime)
 {
     for(int i = 0; i < planetCount; i++)
     {
         // Orbit around Sun
-        planets[i].angle += planets[i].orbitSpeed * deltaTime;
+        planets[i].angle += planets[i].orbitSpeed * 0.5;
 
         // Spin around its own axis
         planets[i].rotation += planets[i].rotationSpeed * deltaTime * 50;
@@ -398,8 +397,6 @@ void updatePlanets(float deltaTime)
     moonAngle += 20.0f * deltaTime; // 20 deg/sec orbit speed
     if (moonAngle > 360.0f) moonAngle -= 360.0f;
 }
-
-
 
 /* ================= MAIN ================= */
 int main(){
@@ -417,18 +414,15 @@ int main(){
     gluQuadricNormals(quad, GLU_SMOOTH);
     gluQuadricDrawStyle(quad, GLU_FILL);
 
-
     backgroundTex= loadTexture("Textures/space.bmp");
     earthDayTex   = loadTexture("Textures/earth.bmp");
     earthNightTex = loadTexture("Textures/earth_night.bmp");
     saturnRingTex = loadTexture("Textures/saturnring.png");
     uranusRingTex = loadTexture("Textures/uranusring.png");
 
-
     // Load planet textures 
     planets[0].texture = loadTexture("Textures/mercury.bmp");
     planets[1].texture = loadTexture("Textures/venus.bmp");
-    planets[2].texture = loadTexture("Textures/earth.bmp");
     planets[3].texture = loadTexture("Textures/mars.bmp");
     planets[4].texture = loadTexture("Textures/jupiter.bmp");
     planets[5].texture = loadTexture("Textures/saturn.bmp");
@@ -437,13 +431,18 @@ int main(){
 
     //Load Sun and moon texture
     sunTexture = loadTexture("Textures/sun.bmp");     
-    moonTexture = loadTexture("Textures/moon.bmp");   
-   
-    // Inner asteroid belt (between Mars and Jupiter)
-    initBelt(innerBelt, 125, 175, 400);
+    moonTexture = loadTexture("Textures/moon.bmp");
 
-    // Outer belt (beyond Neptune)
-    initBelt(outerBelt, 330, 400, 600);
+    //Asteroid belt
+    float marsOrbit    = planets[3].orbitR;
+    float jupiterOrbit = planets[4].orbitR;
+    // Place belt exactly between Mars and Jupiter
+    float innerBeltCenter = (marsOrbit + jupiterOrbit) * 0.5f;
+    float neptuneOrbit = planets[7].orbitR;
+    // Place it beyond Neptune
+    float outerBeltCenter = neptuneOrbit + 10.0f;
+    initBelt(innerBelt, innerBeltCenter-3, innerBeltCenter+3, 500);
+    initBelt(outerBelt, outerBeltCenter, outerBeltCenter+10, 500);
 
     SDL_Event event;
     int running=1;
@@ -486,8 +485,7 @@ int main(){
         }
         //___________Keyboard Handler_____________
         processInput(running, deltaTime);
-
-        //___________Palnet Rotation_______________________
+        //___________Palnet Rotation_______________
         updatePlanets(deltaTime);
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -500,7 +498,6 @@ int main(){
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         gluPerspective(70.0, (float)WIDTH/HEIGHT, 0.1, 2000.0);
-
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
@@ -519,8 +516,6 @@ int main(){
 
         SDL_GL_SwapWindow(win);
     }
-
-
     gluDeleteQuadric(quad);
     SDL_GL_DeleteContext(ctx);
     SDL_DestroyWindow(win);
